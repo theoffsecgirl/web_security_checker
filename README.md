@@ -13,7 +13,7 @@ Este script de Python escanea vulnerabilidades comunes en un sitio web y verific
 
 ## Uso
 
-    Clona el repositorio o descarga el archivo tester.py.
+    Clona el repositorio o descarga el archivo webTester.py.
     Abre una terminal y navega al directorio que contiene webTester.py.
     Ejecuta el script:
 
