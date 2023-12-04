@@ -17,7 +17,7 @@ Este script de Python escanea vulnerabilidades comunes en un sitio web y verific
     Abre una terminal y navega al directorio que contiene tester.py.
     Ejecuta el script:
 
-    bash
+    
 
     ./tester.py
 
