@@ -19,7 +19,7 @@ Este script de Python escanea vulnerabilidades comunes en un sitio web y verific
 
     
 
-    ./tester.py
+    ./webTester.py
 
 ## Instalación (Opcional)
 
