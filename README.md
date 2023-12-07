@@ -26,7 +26,7 @@ Este script de Python escanea vulnerabilidades comunes en un sitio web y verific
 Puedes instalar el script en /usr/local/bin para que sea ejecutable desde cualquier ubicación sin necesidad de invocar Python directamente.
 
 ```bash
-sudo cp tester.py /usr/local/bin/webTester
+sudo cp webTester.py /usr/local/bin/webTester
 sudo chmod +x /usr/local/bin/webTester
 ```
 Después de la instalación, puedes ejecutar el script simplemente escribiendo tester en la terminal.
