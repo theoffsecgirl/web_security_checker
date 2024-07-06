@@ -13,20 +13,20 @@ Este script de Python escanea vulnerabilidades comunes en un sitio web y verific
 
 ## Uso
 
-    Clona el repositorio o descarga el archivo webTester.py.
-    Abre una terminal y navega al directorio que contiene webTester.py.
+    Clona el repositorio o descarga el archivo vulnerableWebTester.py.
+    Abre una terminal y navega al directorio que contiene vulnerableWebTester.py.
     Ejecuta el script:
 
     
 
-    ./webTester.py
+    ./vulnerableWebTester.py
 
 ## Instalación (Opcional)
 
 Puedes instalar el script en /usr/local/bin para que sea ejecutable desde cualquier ubicación sin necesidad de invocar Python directamente.
 
 ```bash
-sudo cp webTester.py /usr/local/bin/webTester
-sudo chmod +x /usr/local/bin/webTester
+sudo cp vulnerableWebTester.py /usr/local/bin/vulnerableWebTester
+sudo chmod +x /usr/local/bin/vulnerableWebTester
 ```
 Después de la instalación, puedes ejecutar el script simplemente escribiendo tester en la terminal.
