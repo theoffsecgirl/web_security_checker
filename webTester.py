@@ -3,29 +3,58 @@
 import requests
 from lxml import html
 
+# Definición de colores
+class Colores:
+    VERDE = "\033[92m"
+    ROJO = "\033[91m"
+    AMARILLO = "\033[93m"
+    RESET = "\033[0m"
+
+def imprimir_banner():
+    """Imprime un banner de bienvenida."""
+    banner = r"""
+     _____   _             ___     __    __   ___               ___   _         _ 
+    |_   _| | |_    ___   / _ \   / _|  / _| / __|  ___   __   / __| (_)  _ _  | |
+      | |   | ' \  / -_) | (_) | |  _| |  _| \__ \ / -_) / _| | (_ | | | | '_| | |
+      |_|   |_||_| \___|  \___/  |_|   |_|   |___/ \___| \__|  \___| |_| |_|   |_|
+    """
+    print(Colores.VERDE + banner + Colores.RESET)
+
 def verificar_csrf(formulario):
+    """Verifica si hay un token CSRF en el formulario."""
     csrf_token = formulario.xpath('//input[@name="csrf_token"]')
     if not csrf_token:
-        print("Posible vulnerabilidad CSRF en el formulario.")
+        print(Colores.AMARILLO + "⚠️ Posible vulnerabilidad CSRF en el formulario." + Colores.RESET)
 
 def verificar_inyeccion_sql(url):
+    """Verifica posibles vulnerabilidades de inyección SQL en la URL."""
     palabras_clave_sql = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'DROP', 'UNION']
-    response = requests.get(url)
-    for palabra_clave in palabras_clave_sql:
-        if palabra_clave in response.text:
-            print(f"Posible vulnerabilidad de inyección SQL detectada: {palabra_clave}")
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Lanza un error si la solicitud no fue exitosa
+        for palabra_clave in palabras_clave_sql:
+            if palabra_clave in response.text:
+                print(Colores.AMARILLO + f"⚠️ Posible vulnerabilidad de inyección SQL detectada: {palabra_clave}" + Colores.RESET)
+    except requests.RequestException as e:
+        print(Colores.ROJO + f"❌ Error al verificar inyección SQL: {e}" + Colores.RESET)
 
 def verificar_xss(url):
-    response = requests.get(url)
-    root = html.fromstring(response.content)
-    scripts = root.xpath('//script')
-    if scripts:
-        print("Posible vulnerabilidad de Cross-Site Scripting (XSS) detectada.")
+    """Verifica posibles vulnerabilidades de XSS en la URL."""
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Lanza un error si la solicitud no fue exitosa
+        root = html.fromstring(response.content)
+        scripts = root.xpath('//script')
+        if scripts:
+            print(Colores.AMARILLO + "⚠️ Posible vulnerabilidad de Cross-Site Scripting (XSS) detectada." + Colores.RESET)
+    except requests.RequestException as e:
+        print(Colores.ROJO + f"❌ Error al verificar XSS: {e}" + Colores.RESET)
 
 def escanear_vulnerabilidades(url, opciones):
+    """Escanea la URL en busca de las vulnerabilidades seleccionadas."""
     try:
-        # Obtener el contenido HTML de la página
         response = requests.get(url)
+        response.raise_for_status()  # Lanza un error si la solicitud no fue exitosa
         root = html.fromstring(response.content)
 
         # Verificar vulnerabilidades según las opciones seleccionadas
@@ -39,9 +68,10 @@ def escanear_vulnerabilidades(url, opciones):
             verificar_xss(url)
 
     except requests.RequestException as e:
-        print(f"Error al realizar la solicitud: {e}")
+        print(Colores.ROJO + f"❌ Error al escanear la URL: {e}" + Colores.RESET)
 
 if __name__ == "__main__":
+    imprimir_banner()  # Imprime el banner al inicio
     url_a_escanear = input("Ingrese la URL a escanear: ")
 
     print("Seleccione las vulnerabilidades a comprobar:")
@@ -62,7 +92,7 @@ if __name__ == "__main__":
     elif seleccion == '4':
         opciones_seleccionadas = ['csrf', 'sql', 'xss']
     else:
-        print("Opción no válida. Saliendo.")
+        print(Colores.ROJO + "❌ Opción no válida. Saliendo." + Colores.RESET)
         exit()
 
     escanear_vulnerabilidades(url_a_escanear, opciones_seleccionadas)
