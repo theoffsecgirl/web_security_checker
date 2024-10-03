@@ -2,6 +2,7 @@
 
 import requests
 from lxml import html
+from urllib.parse import urlparse
 
 # Definición de colores
 class Colores:
@@ -20,40 +21,57 @@ def imprimir_banner():
     """
     print(Colores.VERDE + banner + Colores.RESET)
 
+def validar_url(url):
+    """Valida que la URL sea correcta."""
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False
+
 def verificar_csrf(formulario):
     """Verifica si hay un token CSRF en el formulario."""
     csrf_token = formulario.xpath('//input[@name="csrf_token"]')
     if not csrf_token:
         print(Colores.AMARILLO + "⚠️ Posible vulnerabilidad CSRF en el formulario." + Colores.RESET)
+    else:
+        print(Colores.VERDE + "✅ Token CSRF encontrado." + Colores.RESET)
 
-def verificar_inyeccion_sql(url):
-    """Verifica posibles vulnerabilidades de inyección SQL en la URL."""
-    palabras_clave_sql = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'DROP', 'UNION']
-    try:
-        response = requests.get(url)
-        response.raise_for_status()  # Lanza un error si la solicitud no fue exitosa
-        for palabra_clave in palabras_clave_sql:
-            if palabra_clave in response.text:
-                print(Colores.AMARILLO + f"⚠️ Posible vulnerabilidad de inyección SQL detectada: {palabra_clave}" + Colores.RESET)
-    except requests.RequestException as e:
-        print(Colores.ROJO + f"❌ Error al verificar inyección SQL: {e}" + Colores.RESET)
+def verificar_inyeccion_sql_avanzado(url):
+    """Verifica inyección SQL enviando payloads comunes."""
+    payloads = ["' OR 1=1--", "' OR 'a'='a", "' OR 1=1#", "' AND 1=1--"]
+    vulnerable = False
+    for payload in payloads:
+        try:
+            response = requests.get(f"{url}{payload}", timeout=10)
+            if "SQL" in response.text or "syntax" in response.text:
+                print(Colores.AMARILLO + f"⚠️ Posible vulnerabilidad de inyección SQL con el payload: {payload}" + Colores.RESET)
+                vulnerable = True
+        except requests.RequestException as e:
+            print(Colores.ROJO + f"❌ Error al verificar inyección SQL avanzada: {e}" + Colores.RESET)
+    if not vulnerable:
+        print(Colores.VERDE + "✅ No se detectaron inyecciones SQL." + Colores.RESET)
 
-def verificar_xss(url):
-    """Verifica posibles vulnerabilidades de XSS en la URL."""
+def verificar_xss_avanzado(url):
+    """Verifica vulnerabilidades XSS enviando payloads comunes."""
+    payload = "<script>alert('XSS')</script>"
     try:
-        response = requests.get(url)
-        response.raise_for_status()  # Lanza un error si la solicitud no fue exitosa
-        root = html.fromstring(response.content)
-        scripts = root.xpath('//script')
-        if scripts:
-            print(Colores.AMARILLO + "⚠️ Posible vulnerabilidad de Cross-Site Scripting (XSS) detectada." + Colores.RESET)
+        response = requests.get(url, params={"q": payload}, timeout=10)
+        if payload in response.text:
+            print(Colores.AMARILLO + "⚠️ Posible vulnerabilidad de Cross-Site Scripting (XSS) reflejado." + Colores.RESET)
+        else:
+            print(Colores.VERDE + "✅ No se detectaron vulnerabilidades XSS reflejado." + Colores.RESET)
     except requests.RequestException as e:
-        print(Colores.ROJO + f"❌ Error al verificar XSS: {e}" + Colores.RESET)
+        print(Colores.ROJO + f"❌ Error al verificar XSS avanzado: {e}" + Colores.RESET)
 
 def escanear_vulnerabilidades(url, opciones):
     """Escanea la URL en busca de las vulnerabilidades seleccionadas."""
+    if not validar_url(url):
+        print(Colores.ROJO + "❌ URL inválida. Por favor, ingrese una URL válida." + Colores.RESET)
+        return
+
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
         response.raise_for_status()  # Lanza un error si la solicitud no fue exitosa
         root = html.fromstring(response.content)
 
@@ -63,9 +81,9 @@ def escanear_vulnerabilidades(url, opciones):
             if 'csrf' in opciones:
                 verificar_csrf(formulario)
         if 'sql' in opciones:
-            verificar_inyeccion_sql(url)
+            verificar_inyeccion_sql_avanzado(url)
         if 'xss' in opciones:
-            verificar_xss(url)
+            verificar_xss_avanzado(url)
 
     except requests.RequestException as e:
         print(Colores.ROJO + f"❌ Error al escanear la URL: {e}" + Colores.RESET)
