@@ -1,4 +1,4 @@
-# WebFlow: Escanador de Vulnerabilidades Web 🕵️‍♀️
+# WebFlow: Escaner de Vulnerabilidades Web 🕵️‍♀️
 
 Este es un script Python para escanear vulnerabilidades web que permite descubrir URLs en un sitio web, escanear para vulnerabilidades como inyección SQL e XSS, y proporcionar instrucciones sobre cómo explotar manualmente las vulnerabilidades.
 
