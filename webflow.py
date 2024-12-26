@@ -33,11 +33,8 @@ def imprimir_banner():
 
 def validar_url(url):
     """Valida que la URL sea correcta."""
-    try:
-        result = urlparse(url)
-        return all([result.scheme, result.netloc]) or (result.netloc and not result.scheme)
-    except ValueError:
-        return False
+    result = urlparse(url)
+    return bool(result.scheme and result.netloc)
 
 def verificar_csrf(formulario):
     """Verifica si hay un token CSRF en el formulario."""
@@ -74,6 +71,39 @@ def verificar_xss_avanzado(url):
     except requests.RequestException as e:
         print(Colores.ROJO + f"❌ Error al verificar XSS avanzado: {e}" + Colores.RESET)
 
+def verificar_inyeccion_comando(url):
+    """Verifica inyección de comandos enviando payloads comunes."""
+    payloads = ["; ls", "; cat /etc/passwd"]
+    vulnerable = False
+    for payload in tqdm(payloads, desc="Verificando Inyección de Comandos"):
+        try:
+            response = requests.get(f"{url}{payload}", timeout=10)
+            if "root:" in response.text:
+                print(Colores.AMARILLO + f"⚠️ Posible vulnerabilidad de inyección de comandos con el payload: {payload}" + Colores.RESET)
+                vulnerable = True
+        except requests.RequestException as e:
+            print(Colores.ROJO + f"❌ Error al verificar inyección de comandos: {e}" + Colores.RESET)
+    if not vulnerable:
+        print(Colores.VERDE + "✅ No se detectaron inyecciones de comandos." + Colores.RESET)
+
+def verificar_encabezados_http(url):
+    """Verifica la seguridad de los encabezados HTTP."""
+    try:
+        response = requests.get(url, timeout=10)
+        if "X-Content-Type-Options" not in response.headers:
+            print(Colores.AMARILLO + "⚠️ Falta encabezado X-Content-Type-Options" + Colores.RESET)
+        if "X-XSS-Protection" not in response.headers:
+            print(Colores.AMARILLO + "⚠️ Falta encabezado X-XSS-Protection" + Colores.RESET)
+        if "X-Frame-Options" not in response.headers:
+            print(Colores.AMARILLO + "⚠️ Falta encabezado X-Frame-Options" + Colores.RESET)
+        if "Strict-Transport-Security" not in response.headers:
+            print(Colores.AMARILLO + "⚠️ Falta encabezado Strict-Transport-Security" + Colores.RESET)
+        if "Content-Security-Policy" not in response.headers:
+            print(Colores.AMARILLO + "⚠️ Falta encabezado Content-Security-Policy" + Colores.RESET)
+        print(Colores.VERDE + "✅ Encabezados HTTP revisados." + Colores.RESET)
+    except requests.RequestException as e:
+        print(Colores.ROJO + f"❌ Error al verificar encabezados HTTP: {e}" + Colores.RESET)
+
 def escanear_vulnerabilidades(url, opciones, modo):
     """Escanea la URL en busca de las vulnerabilidades seleccionadas."""
     if not validar_url(url):
@@ -100,6 +130,10 @@ def escanear_vulnerabilidades(url, opciones, modo):
             verificar_inyeccion_sql_avanzado(url)
         if 'xss' in opciones:
             verificar_xss_avanzado(url)
+        if 'comando' in opciones:
+            verificar_inyeccion_comando(url)
+        if 'encabezados' in opciones:
+            verificar_encabezados_http(url)
 
     except requests.RequestException as e:
         print(Colores.ROJO + f"❌ Error al escanear la URL: {e}" + Colores.RESET)
@@ -116,7 +150,9 @@ if __name__ == "__main__":
         print("1. CSRF")
         print("2. Inyección SQL")
         print("3. XSS")
-        print("4. Todas")
+        print("4. Inyección de Comandos")
+        print("5. Encabezados HTTP")
+        print("6. Todas")
 
         seleccion = input("Ingrese el número de la opción: ")
 
@@ -128,7 +164,11 @@ if __name__ == "__main__":
         elif seleccion == '3':
             opciones_seleccionadas.append('xss')
         elif seleccion == '4':
-            opciones_seleccionadas = ['csrf', 'sql', 'xss']
+            opciones_seleccionadas.append('comando')
+        elif seleccion == '5':
+            opciones_seleccionadas.append('encabezados')
+        elif seleccion == '6':
+            opciones_seleccionadas = ['csrf', 'sql', 'xss', 'comando', 'encabezados']
         else:
             print(Colores.ROJO + "❌ Opción no válida. Saliendo." + Colores.RESET)
             exit()
