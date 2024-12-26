@@ -1,6 +1,6 @@
-# WebVulnHunter
+# webflow
 
-WebVulnHunter es una herramienta de ciberseguridad que permite escanear una URL en busca de vulnerabilidades comunes como CSRF, inyección SQL y XSS. La herramienta proporciona un modo activo y pasivo para adaptarse a diferentes escenarios de prueba.
+webflow es una herramienta de ciberseguridad que permite escanear una URL en busca de vulnerabilidades comunes como CSRF, inyección SQL y XSS. La herramienta proporciona un modo activo y pasivo para adaptarse a diferentes escenarios de prueba.
 
 ## Características
 
