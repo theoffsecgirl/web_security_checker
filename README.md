@@ -24,7 +24,7 @@ Este es un script Python para escanear vulnerabilidades web que permite descubri
 
 1. Clona el repositorio:
 ```bash
-git clone https://github.com/tu_usuario/web-vulnerability.git
+git clone https://github.com/theoffsecgirl/webflow.git
 ```
 
 2. Cambia al directorio del proyecto:
