@@ -18,16 +18,7 @@ class Colores:
 def imprimir_banner():
     """Imprime un banner de bienvenida."""
     banner = r"""
-___________________________________/\\\_______________/\\\\\__/\\\\\\____________________________________        
- __________________________________\/\\\_____________/\\\///__\////\\\____________________________________       
-  __________________________________\/\\\____________/\\\_________\/\\\____________________________________      
-   __/\\____/\\___/\\_____/\\\\\\\\__\/\\\_________/\\\\\\\\\______\/\\\________/\\\\\_____/\\____/\\___/\\_     
-    _\/\\\__/\\\\_/\\\___/\\\/////\\\_\/\\\\\\\\\__\////\\\//_______\/\\\______/\\\///\\\__\/\\\__/\\\\_/\\\_    
-     _\//\\\/\\\\\/\\\___/\\\\\\\\\\\__\/\\\////\\\____\/\\\_________\/\\\_____/\\\__\//\\\_\//\\\/\\\\\/\\\__   
-      __\//\\\\\/\\\\\___\//\\///////___\/\\\__\/\\\____\/\\\_________\/\\\____\//\\\__/\\\___\//\\\\\/\\\\\___  
-       ___\//\\\\//\\\_____\//\\\\\\\\\\_\/\\\\\\\\\_____\/\\\_______/\\\\\\\\\__\///\\\\\/_____\//\\\\//\\\____ 
-        ____\///__\///_______\//////////__\/////////______\///_______\/////////_____\/////________\///__\///_____                                                                                   
-                                     by TheOffSecGirl
+    # Tu banner aquí
     """
     print(Colores.VERDE + banner + Colores.RESET)
 
@@ -106,40 +97,46 @@ def escanear_vulnerabilidades(url, opciones, modo):
 
 if __name__ == "__main__":
     imprimir_banner()  # Imprime el banner al inicio
-    url_a_escanear = input("Ingrese la URL a escanear: ")
+    try:
+        url_a_escanear = input la("Ingrese URL a escanear: ")
+        while not validar_url(url_a_escanear):
+            print(Colores.ROJO + "❌ URL inválida. Por favor, ingrese una URL válida." + Colores.RESET)
+            url_a_escanear = input("Ingrese la URL a escanear: ")
 
-    print("Seleccione las vulnerabilidades a comprobar:")
-    print("1. CSRF")
-    print("2. Inyección SQL")
-    print("3. XSS")
-    print("4. Todas")
+        print("Seleccione las vulnerabilidades a comprobar:")
+        print("1. CSRF")
+        print("2. Inyección SQL")
+        print("3. XSS")
+        print("4. Todas")
 
-    seleccion = input("Ingrese el número de la opción: ")
+        seleccion = input("Ingrese el número de la opción: ")
 
-    opciones_seleccionadas = []
-    if seleccion == '1':
-        opciones_seleccionadas.append('csrf')
-    elif seleccion == '2':
-        opciones_seleccionadas.append('sql')
-    elif seleccion == '3':
-        opciones_seleccionadas.append('xss')
-    elif seleccion == '4':
-        opciones_seleccionadas = ['csrf', 'sql', 'xss']
-    else:
-        print(Colores.ROJO + "❌ Opción no válida. Saliendo." + Colores.RESET)
-        exit()
+        opciones_seleccionadas = []
+        if seleccion == '1':
+            opciones_seleccionadas.append('csrf')
+        elif seleccion == '2':
+            opciones_seleccionadas.append('sql')
+        elif seleccion == '3':
+            opciones_seleccionadas.append('xss')
+        elif seleccion == '4':
+            opciones_seleccionadas = ['csrf', 'sql', 'xss']
+        else:
+            print(Colores.ROJO + "❌ Opción no válida. Saliendo." + Colores.RESET)
+            exit()
 
-    print("Seleccione el modo de escaneo:")
-    print("1. Activo")
-    print("2. Pasivo")
-    modo = input("Ingrese el número de la opción: ")
+        print("Seleccione el modo de escaneo:")
+        print("1. Activo")
+        print("2. Pasivo")
+        modo = input("Ingrese el número de la opción: ")
 
-    if modo == '1':
-        modo = 'activo'
-    elif modo == '2':
-        modo = 'pasivo'
-    else:
-        print(Colores.ROJO + "❌ Opción no válida. Saliendo." + Colores.RESET)
-        exit()
+        if modo == '1':
+            modo = 'activo'
+        elif modo == '2':
+            modo = 'pasivo'
+        else:
+            print(Colores.ROJO + "❌ Opción no válida. Saliendo." + Colores.RESET)
+            exit()
 
-    escanear_vulnerabilidades(url_a_escanear, opciones_seleccionadas, modo)
+        escanear_vulnerabilidades(url_a_escanear, opciones_seleccionadas, modo)
+    except KeyboardInterrupt:
+        print(Colores.ROJO + "❌ Escaneo interrumpido por el usuario." + Colores.RESET)
