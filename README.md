@@ -1,32 +1,11 @@
-# vulnerableWebTester
-Este script de Python escanea vulnerabilidades comunes en un sitio web y verifica la protección CSRF, la inyección SQL y el Cross-Site Scripting (XSS).
+# WebVulnHunter
 
+WebVulnHunter es una herramienta de ciberseguridad que permite escanear una URL en busca de vulnerabilidades comunes como CSRF, inyección SQL y XSS. La herramienta proporciona un modo activo y pasivo para adaptarse a diferentes escenarios de prueba.
 
-Este script de Python escanea vulnerabilidades comunes en un sitio web y verifica la protección CSRF, la inyección SQL y el Cross-Site Scripting (XSS).
+## Características
 
-## Requisitos
+- **Barras de Progreso**: Para mostrar el progreso de las pruebas.
+- **User Agent**: Configurado para simular una solicitud de navegador.
+- **Modo Activo y Pasivo**: Para adaptarse a diferentes escenarios de prueba.
+- **Vulnerabilidades Comunes**: Escaneo de CSRF, inyección SQL y XSS.
 
-- Python 3.x
-- Las bibliotecas `requests` y `lxml`. Puedes instalarlas ejecutando:
-  ```bash
-  pip install requests lxml
-
-## Uso
-
-    Clona el repositorio o descarga el archivo webTester.py.
-    Abre una terminal y navega al directorio que contiene webTester.py.
-    Ejecuta el script:
-
-    
-
-    ./webTester.py
-
-## Instalación (Opcional)
-
-Puedes instalar el script en /usr/local/bin para que sea ejecutable desde cualquier ubicación sin necesidad de invocar Python directamente.
-
-```bash
-sudo cp webTester.py /usr/local/bin/webTester
-sudo chmod +x /usr/local/bin/webTester
-```
-Después de la instalación, puedes ejecutar el script simplemente escribiendo tester en la terminal.
