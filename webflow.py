@@ -114,6 +114,27 @@ def verificar_encabezados_http(url, user_agent=None):
     except requests.RequestException as e:
         print(colored(f"❌ Error al verificar encabezados HTTP: {e}", Colores.ROJO))
 
+def verificar_xxe_ob(url, user_agent=None):
+    """Verifica vulnerabilidades XXE OB enviando payloads comunes."""
+    payloads = ["<xml><foo><bar><baz><cdata><![CDATA[<x><xxe>&xxe;</xxe></x>]]></cdata></baz></bar></foo></xml>"]
+    headers = {'User-Agent': user_agent} if user_agent else {}
+    vulnerable = False
+    for payload in payloads:
+        try:
+            response = requests.post(url, data=payload, headers=headers, timeout=10)
+            if "xxe" in response.text:
+                print(colored(f"⚠️ Posible vulnerabilidad de XXE OB con el payload: {payload}", Colores.AMARILLO))
+                vulnerable = True
+        except requests.RequestException as e:
+            print(colored(f"❌ Error al verificar XXE OB: {e}", Colores.ROJO))
+    if not vulnerable:
+        print(colored("✅ No se detectaron vulnerabilidades XXE OB.", Colores.VERDE))
+
+def automatizar_xxe_ob(url, user_agent=None):
+    """Automatiza la explotación de XXE OB."""
+    print(colored("Automatizando la explotación de XXE OB...", Colores.AZUL))
+    verificar_xxe_ob(url, user_agent)
+
 def escanear_vulnerabilidades(url, opciones, user_agent=None):
     """Escanea la URL en busca de las vulnerabilidades seleccionadas."""
     if not validar_url(url):
@@ -139,6 +160,8 @@ def escanear_vulnerabilidades(url, opciones, user_agent=None):
             verificar_inyeccion_comando(url, user_agent)
         if 'encabezados' in opciones:
             verificar_encabezados_http(url, user_agent)
+        if 'xxe_ob' in opciones:
+            verificar_xxe_ob(url, user_agent)
 
     except requests.RequestException as e:
         print(colored(f"❌ Error al escanear la URL: {e}", Colores.ROJO))
@@ -278,7 +301,8 @@ if __name__ == "__main__":
         print(colored("4. Todas las anteriores", Colores.CYAN))
         print(colored("5. SQL Injection", Colores.CYAN))
         print(colored("6. Enumerar directorios", Colores.CYAN))
-        print(colored("7. Salir", Colores.CYAN))
+        print(colored("7. XXE OB Automatizado", Colores.CYAN))
+        print(colored("8. Salir", Colores.CYAN))
 
         tarea = input(colored("Ingrese el número de la opción: ", Colores.AZUL))
 
@@ -297,6 +321,7 @@ if __name__ == "__main__":
             print(colored("4. Inyección de Comandos", Colores.CYAN))
             print(colored("5. Encabezados HTTP", Colores.CYAN))
             print(colored("6. Todas", Colores.CYAN))
+            print(colored("7. XXE OB", Colores.CYAN))
 
             seleccion = input(colored("Ingrese el número de la opción: ", Colores.AZUL))
 
@@ -313,6 +338,8 @@ if __name__ == "__main__":
                 opciones_seleccionadas.append('encabezados')
             elif seleccion == '6':
                 opciones_seleccionadas = ['csrf', 'sql', 'xss', 'comando', 'encabezados']
+            elif seleccion == '7':
+                opciones_seleccionadas.append('xxe_ob')
             else:
                 print(colored("[!] Opción no válida.", Colores.ROJO))
                 continue
@@ -342,6 +369,10 @@ if __name__ == "__main__":
             enumerar_directorios(url, wordlist_path, user_agent)
 
         elif tarea == '7':
+            url = input(colored("Ingrese la URL para automatizar XXE OB: ", Colores.AZUL))
+            automatizar_xxe_ob(url, user_agent)
+
+        elif tarea == '8':
             print(colored("\n[✓] ¡Hasta luego!", Colores.VERDE))
             break
 
