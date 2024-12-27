@@ -100,6 +100,7 @@ def verificar_encabezados_http(url, user_agent=None):
     headers = {'User-Agent': user_agent} if user_agent else {}
     try:
         response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()  # Lanza un error si la solicitud no fue exitosa
         if "X-Content-Type-Options" not in response.headers:
             print(colored("⚠️ Falta encabezado X-Content-Type-Options", Colores.AMARILLO))
         if "X-XSS-Protection" not in response.headers:
@@ -293,88 +294,92 @@ def enumerar_directorios(url, wordlist_path, user_agent=None):
 if __name__ == "__main__":
     imprimir_banner()  # Imprime el banner al inicio
 
-    while True:
-        print(colored("\nSeleccione la tarea que desea realizar:", Colores.AZUL))
-        print(colored("1. Análisis de vulnerabilidades en URL", Colores.CYAN))
-        print(colored("2. Reconocimiento de subdominios", Colores.CYAN))
-        print(colored("3. Escaneo de puertos", Colores.CYAN))
-        print(colored("4. Todas las anteriores", Colores.CYAN))
-        print(colored("5. SQL Injection", Colores.CYAN))
-        print(colored("6. Enumerar directorios", Colores.CYAN))
-        print(colored("7. XXE OB Automatizado", Colores.CYAN))
-        print(colored("8. Salir", Colores.CYAN))
+    try:
+        while True:
+            print(colored("\nSeleccione la tarea que desea realizar:", Colores.AZUL))
+            print(colored("1. Análisis de vulnerabilidades en URL", Colores.CYAN))
+            print(colored("2. Reconocimiento de subdominios", Colores.CYAN))
+            print(colored("3. Escaneo de puertos", Colores.CYAN))
+            print(colored("4. SQL Injection", Colores.CYAN))
+            print(colored("5. Enumerar directorios", Colores.CYAN))
+            print(colored("6. XXE OB Automatizado", Colores.CYAN))
+            print(colored("7. Todas las anteriores", Colores.CYAN))
+            print(colored("8. Salir", Colores.CYAN))
 
-        tarea = input(colored("Ingrese el número de la opción: ", Colores.AZUL))
+            tarea = input(colored("Ingrese el número de la opción: ", Colores.AZUL))
 
-        # Preguntar si desea usar un User-Agent personalizado
-        usar_agente = input(colored("¿Deseas añadir un User-Agent personalizado para evitar bloqueos del WAF? (y/n): ", Colores.AZUL))
-        user_agent = None
-        if usar_agente.lower() == 'y':
-            user_agent = input(colored("Introduce el User-Agent que deseas usar: ", Colores.AZUL))
+            if tarea in ['1', '2', '3', '4', '5', '6', '7']:
+                usar_agente = input(colored("¿Deseas añadir un User-Agent personalizado para evitar bloqueos del WAF? (y/n): ", Colores.AZUL))
+                user_agent = None
+                if usar_agente.lower() == 'y':
+                    user_agent = input(colored("Introduce el User-Agent que deseas usar: ", Colores.AZUL))
 
-        if tarea == '1':
-            url_a_escanear = input(colored("Ingrese la URL a escanear: ", Colores.AZUL))
-            print(colored("Seleccione las vulnerabilidades a comprobar:", Colores.AZUL))
-            print(colored("1. CSRF", Colores.CYAN))
-            print(colored("2. Inyección SQL", Colores.CYAN))
-            print(colored("3. XSS", Colores.CYAN))
-            print(colored("4. Inyección de Comandos", Colores.CYAN))
-            print(colored("5. Encabezados HTTP", Colores.CYAN))
-            print(colored("6. Todas", Colores.CYAN))
-            print(colored("7. XXE OB", Colores.CYAN))
+            if tarea == '1':
+                url_a_escanear = input(colored("Ingrese la URL a escanear: ", Colores.AZUL))
+                print(colored("Seleccione las vulnerabilidades a comprobar:", Colores.AZUL))
+                print(colored("1. CSRF", Colores.CYAN))
+                print(colored("2. Inyección SQL", Colores.CYAN))
+                print(colored("3. XSS", Colores.CYAN))
+                print(colored("4. Inyección de Comandos", Colores.CYAN))
+                print(colored("5. Encabezados HTTP", Colores.CYAN))
+                print(colored("6. XXE OB", Colores.CYAN))
+                print(colored("7. Todas", Colores.CYAN))
 
-            seleccion = input(colored("Ingrese el número de la opción: ", Colores.AZUL))
+                seleccion = input(colored("Ingrese el número de la opción: ", Colores.AZUL))
 
-            opciones_seleccionadas = []
-            if seleccion == '1':
-                opciones_seleccionadas.append('csrf')
-            elif seleccion == '2':
-                opciones_seleccionadas.append('sql')
-            elif seleccion == '3':
-                opciones_seleccionadas.append('xss')
-            elif seleccion == '4':
-                opciones_seleccionadas.append('comando')
-            elif seleccion == '5':
-                opciones_seleccionadas.append('encabezados')
-            elif seleccion == '6':
-                opciones_seleccionadas = ['csrf', 'sql', 'xss', 'comando', 'encabezados']
-            elif seleccion == '7':
-                opciones_seleccionadas.append('xxe_ob')
+                opciones_seleccionadas = []
+                if seleccion == '1':
+                    opciones_seleccionadas.append('csrf')
+                elif seleccion == '2':
+                    opciones_seleccionadas.append('sql')
+                elif seleccion == '3':
+                    opciones_seleccionadas.append('xss')
+                elif seleccion == '4':
+                    opciones_seleccionadas.append('comando')
+                elif seleccion == '5':
+                    opciones_seleccionadas.append('encabezados')
+                elif seleccion == '6':
+                    opciones_seleccionadas.append('xxe_ob')
+                elif seleccion == '7':
+                    opciones_seleccionadas = ['csrf', 'sql', 'xss', 'comando', 'encabezados', 'xxe_ob']
+                else:
+                    print(colored("[!] Opción no válida.", Colores.ROJO))
+                    continue
+
+                escanear_vulnerabilidades(url_a_escanear, opciones_seleccionadas, user_agent)
+
+            elif tarea == '2':
+                dominio = input(colored("Ingrese el dominio para el reconocimiento: ", Colores.AZUL))
+                reconocimiento_dominio(dominio, user_agent)
+
+            elif tarea == '3':
+                escaneo_puertos()
+
+            elif tarea == '4':
+                main_url = main_url_input()
+                headers = configure_headers(user_agent)
+                sql_injection_menu(main_url, headers)
+
+            elif tarea == '5':
+                url = input(colored("Ingrese la URL base para enumerar directorios: ", Colores.AZUL))
+                wordlist_path = input(colored("Ingrese la ruta de la wordlist: ", Colores.AZUL))
+                enumerar_directorios(url, wordlist_path, user_agent)
+
+            elif tarea == '6':
+                url = input(colored("Ingrese la URL para automatizar XXE OB: ", Colores.AZUL))
+                automatizar_xxe_ob(url, user_agent)
+
+            elif tarea == '7':
+                dominio = input(colored("Ingrese el dominio para el reconocimiento y escaneo: ", Colores.AZUL))
+                reconocimiento_dominio(dominio, user_agent)
+                escaneo_puertos()
+
+            elif tarea == '8':
+                print(colored("\n[✓] ¡Hasta luego!", Colores.VERDE))
+                break
+
             else:
                 print(colored("[!] Opción no válida.", Colores.ROJO))
-                continue
 
-            escanear_vulnerabilidades(url_a_escanear, opciones_seleccionadas, user_agent)
-
-        elif tarea == '2':
-            dominio = input(colored("Ingrese el dominio para el reconocimiento: ", Colores.AZUL))
-            reconocimiento_dominio(dominio, user_agent)
-
-        elif tarea == '3':
-            escaneo_puertos()
-
-        elif tarea == '4':
-            dominio = input(colored("Ingrese el dominio para el reconocimiento y escaneo: ", Colores.AZUL))
-            reconocimiento_dominio(dominio, user_agent)
-            escaneo_puertos()
-
-        elif tarea == '5':
-            main_url = main_url_input()
-            headers = configure_headers(user_agent)
-            sql_injection_menu(main_url, headers)
-
-        elif tarea == '6':
-            url = input(colored("Ingrese la URL base para enumerar directorios: ", Colores.AZUL))
-            wordlist_path = input(colored("Ingrese la ruta de la wordlist: ", Colores.AZUL))
-            enumerar_directorios(url, wordlist_path, user_agent)
-
-        elif tarea == '7':
-            url = input(colored("Ingrese la URL para automatizar XXE OB: ", Colores.AZUL))
-            automatizar_xxe_ob(url, user_agent)
-
-        elif tarea == '8':
-            print(colored("\n[✓] ¡Hasta luego!", Colores.VERDE))
-            break
-
-        else:
-            print(colored("[!] Opción no válida.", Colores.ROJO))
+    except KeyboardInterrupt:
+        print(colored("\n[✓] ¡Hasta luego!", Colores.VERDE))
