@@ -291,6 +291,43 @@ def enumerar_directorios(url, wordlist_path, user_agent=None):
             except requests.RequestException as e:
                 print(colored(f"❌ Error al verificar directorio: {full_url} - {e}", Colores.ROJO))
 
+def preguntar_user_agent():
+    usar_agente = input(colored("¿Deseas añadir un User-Agent personalizado para evitar bloqueos del WAF? (y/n): ", Colores.AZUL))
+    user_agent = None
+    if usar_agente.lower() == 'y':
+        user_agent = input(colored("Introduce el User-Agent que deseas usar: ", Colores.AZUL))
+    return user_agent
+
+def preguntar_opciones_vulnerabilidades():
+    print(colored("Seleccione las vulnerabilidades a comprobar:", Colores.AZUL))
+    print(colored("1. CSRF", Colores.CYAN))
+    print(colored("2. Inyección SQL", Colores.CYAN))
+    print(colored("3. XSS", Colores.CYAN))
+    print(colored("4. Inyección de Comandos", Colores.CYAN))
+    print(colored("5. Encabezados HTTP", Colores.CYAN))
+    print(colored("6. XXE OB", Colores.CYAN))
+    print(colored("7. Todas", Colores.CYAN))
+
+    seleccion = input(colored("Ingrese el número de la opción: ", Colores.AZUL))
+    opciones_seleccionadas = []
+    if seleccion == '1':
+        opciones_seleccionadas.append('csrf')
+    elif seleccion == '2':
+        opciones_seleccionadas.append('sql')
+    elif seleccion == '3':
+        opciones_seleccionadas.append('xss')
+    elif seleccion == '4':
+        opciones_seleccionadas.append('comando')
+    elif seleccion == '5':
+        opciones_seleccionadas.append('encabezados')
+    elif seleccion == '6':
+        opciones_seleccionadas.append('xxe_ob')
+    elif seleccion == '7':
+        opciones_seleccionadas = ['csrf', 'sql', 'xss', 'comando', 'encabezados', 'xxe_ob']
+    else:
+        print(colored("[!] Opción no válida.", Colores.ROJO))
+    return opciones_seleccionadas
+
 if __name__ == "__main__":
     imprimir_banner()  # Imprime el banner al inicio
 
@@ -309,43 +346,11 @@ if __name__ == "__main__":
             tarea = input(colored("Ingrese el número de la opción: ", Colores.AZUL))
 
             if tarea in ['1', '2', '3', '4', '5', '6', '7']:
-                usar_agente = input(colored("¿Deseas añadir un User-Agent personalizado para evitar bloqueos del WAF? (y/n): ", Colores.AZUL))
-                user_agent = None
-                if usar_agente.lower() == 'y':
-                    user_agent = input(colored("Introduce el User-Agent que deseas usar: ", Colores.AZUL))
+                user_agent = preguntar_user_agent()
 
             if tarea == '1':
                 url_a_escanear = input(colored("Ingrese la URL a escanear: ", Colores.AZUL))
-                print(colored("Seleccione las vulnerabilidades a comprobar:", Colores.AZUL))
-                print(colored("1. CSRF", Colores.CYAN))
-                print(colored("2. Inyección SQL", Colores.CYAN))
-                print(colored("3. XSS", Colores.CYAN))
-                print(colored("4. Inyección de Comandos", Colores.CYAN))
-                print(colored("5. Encabezados HTTP", Colores.CYAN))
-                print(colored("6. XXE OB", Colores.CYAN))
-                print(colored("7. Todas", Colores.CYAN))
-
-                seleccion = input(colored("Ingrese el número de la opción: ", Colores.AZUL))
-
-                opciones_seleccionadas = []
-                if seleccion == '1':
-                    opciones_seleccionadas.append('csrf')
-                elif seleccion == '2':
-                    opciones_seleccionadas.append('sql')
-                elif seleccion == '3':
-                    opciones_seleccionadas.append('xss')
-                elif seleccion == '4':
-                    opciones_seleccionadas.append('comando')
-                elif seleccion == '5':
-                    opciones_seleccionadas.append('encabezados')
-                elif seleccion == '6':
-                    opciones_seleccionadas.append('xxe_ob')
-                elif seleccion == '7':
-                    opciones_seleccionadas = ['csrf', 'sql', 'xss', 'comando', 'encabezados', 'xxe_ob']
-                else:
-                    print(colored("[!] Opción no válida.", Colores.ROJO))
-                    continue
-
+                opciones_seleccionadas = preguntar_opciones_vulnerabilidades()
                 escanear_vulnerabilidades(url_a_escanear, opciones_seleccionadas, user_agent)
 
             elif tarea == '2':
