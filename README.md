@@ -37,6 +37,8 @@ cd webflow
 
 ```bash
 pip install -r requirements.txt
+go get -v github.com/projectdiscovery/subfinder/cmd/subfinder
+go get -v github.com/projectdiscovery/httpx/cmd/httpx
 ```
 
 ## Uso 🖥️
