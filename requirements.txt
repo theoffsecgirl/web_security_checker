@@ -1,5 +1,5 @@
-requests
-lxml
-tqdm
-termcolor
-subprocess
+# requirements.txt
+requests==2.26.0
+lxml==4.9.1
+tqdm==4.64.0
+termcolor==1.1.0
