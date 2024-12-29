@@ -3,6 +3,7 @@
 import os
 import subprocess
 import requests
+import time
 from lxml import html
 from urllib.parse import urlparse
 from tqdm import tqdm
